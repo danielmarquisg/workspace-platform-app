@@ -1,0 +1,158 @@
+:root {
+  color-scheme: dark;
+  --background: #101318;
+  --surface:    #1a2029;
+  --border:     #323b49;
+  --text:       white;
+  --muted:      #b0bdce;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--text);
+  /* Fuentes del sistema para servir la web sin descargar recursos externos. */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+main {
+  width: min(100%, 72rem);
+  margin-inline: auto;
+  padding: clamp(2rem, 7vw, 6rem) clamp(1rem, 4vw, 3rem);
+}
+
+header {
+  padding-bottom: 2.5rem;
+  margin-bottom:  2.5rem;
+  border-bottom:  1px solid var(--border);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  margin: 0 0 1.5rem;
+  font-size: 1.25rem;
+}
+
+h3 {
+  margin: 0 0 0.75rem;
+  font-size:   1.5rem;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+}
+
+a {
+  color: inherit;
+}
+
+.workspaces {
+  display: grid;
+  /* Las tarjetas pasan a una columna cuando no caben lado a lado. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1.25rem;
+}
+
+.workspace-card {
+  text-decoration: none;
+}
+
+.workspace-card article {
+  height:  100%;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid #60a5fa;
+  border-radius: 0.75rem;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.workspace-card:nth-child(2) article {
+  border-top-color: #fbbf24;
+}
+
+.workspace-card:nth-child(3) article {
+  border-top-color: #a78bfa;
+}
+
+.workspace-card span,
+.back-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  color: var(--text);
+  font-weight: 650;
+}
+
+.workspace-card:hover article {
+  border-color: #60a5fa;
+  transform: translateY(-0.2rem);
+}
+
+.workspace-card:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 0.25rem;
+  border-radius:  0.75rem;
+}
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.detail-header .back-link {
+  flex: 0 0 auto;
+  margin-top: 0.5rem;
+}
+
+.item-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.item-list li {
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.item-list strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+@media (max-width: 36rem) {
+  .detail-header {
+    display: block;
+  }
+
+  .detail-header .back-link {
+    margin-top: 1.5rem;
+  }
+}
