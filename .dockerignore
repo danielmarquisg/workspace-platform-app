@@ -1,0 +1,12 @@
+# Solo enviamos los archivos necesarios; nuevos archivos locales quedan excluidos por defecto.
+**
+!Dockerfile
+!.dockerignore
+!index.html
+!styles.css
+!japan/
+!japan/index.html
+!recetas/
+!recetas/index.html
+!personal-library/
+!personal-library/index.html
