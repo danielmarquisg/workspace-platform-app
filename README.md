@@ -57,3 +57,28 @@ Los datos se guardan en el volumen `postgres_data` y se conservan al detener y v
 ```bash
 docker compose down
 ```
+
+## Probar la API
+
+Con PostgreSQL arrancado, FastAPI puede comprobar la conexión ejecutando `SELECT 1`. Esta consulta verifica el acceso desde la API sin modificar datos.
+
+La dirección de conexión se configura con `DATABASE_URL` y la contraseña se toma de `POSTGRES_PASSWORD`. Si ya tenías un `.env`, añade la línea `DATABASE_URL` de `.env.example` conservando tu contraseña.
+
+Desde la raíz del repositorio, prepara el entorno de Python y arranca la API:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m uvicorn api.main:app --env-file .env --host 127.0.0.1 --port 8000
+```
+
+`--env-file .env` carga las variables de configuración para la API. En otra terminal, comprueba la conexión:
+
+```bash
+curl -i http://127.0.0.1:8000/health/db
+```
+
+Si puede consultar PostgreSQL, responde con HTTP `200` y `{"status":"ok"}`. Si falta configuración o la conexión falla, responde con HTTP `503` y `{"detail":"Base de datos no disponible"}`, sin mostrar credenciales ni detalles internos.
+
+`GET /health` comprueba que la API responde y funciona aunque PostgreSQL esté detenido. Puedes consultar también `GET /workspaces`, que por ahora devuelve la lista de ejemplo. Para detener la API, pulsa `Ctrl+C`.
