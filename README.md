@@ -127,4 +127,22 @@ Para comprobar que se ha guardado, vuelve a consultar:
 curl -i http://127.0.0.1:8000/workspaces
 ```
 
+### Renombrar un workspace
+
+Consulta `GET /workspaces` y elige el identificador del espacio que quieres renombrar. Sustituye el `4` de este ejemplo por ese identificador:
+
+```bash
+curl -i -X PATCH http://127.0.0.1:8000/workspaces/4 \
+  -H 'Content-Type: application/json' \
+  --data '{"name":"Fotografía de viajes"}'
+```
+
+`PATCH /workspaces/{workspace_id}` modifica el nombre y responde con HTTP `200`, el mismo identificador y el nombre guardado. La actualización se filtra por id y utiliza parámetros SQL.
+
+El nombre sigue las mismas reglas que al crear un espacio: es obligatorio, se recortan los extremos y debe tener contenido. Un nombre inválido o un identificador que no se pueda interpretar como entero devuelve HTTP `422`.
+
+Si el identificador no existe, responde con HTTP `404` y `{"detail":"Espacio no encontrado"}`. Si falta configuración o falla la operación en PostgreSQL, responde con HTTP `503` y `{"detail":"No se ha podido renombrar el espacio"}`.
+
+Vuelve a consultar `GET /workspaces` para comprobar el cambio. La operación conserva el identificador y la cantidad de espacios.
+
 Para detener la API, pulsa `Ctrl+C`.

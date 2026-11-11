@@ -7,8 +7,9 @@ from contextlib import contextmanager
 app = FastAPI()
 
 
-class WorkspaceCreate(BaseModel):
-    # Recortamos los extremos antes de validar para rechazar nombres que solo contienen espacios.
+class WorkspaceName(BaseModel):
+    # Crear y renombrar comparten estas reglas. 
+    # Recortamos antes de validar para rechazar nombres que solo contienen espacios.
     model_config = ConfigDict(str_strip_whitespace=True)
     name: str    = Field(min_length=1)
 
@@ -67,7 +68,7 @@ def list_workspaces():
 
 
 @app.post("/workspaces", status_code=201)
-def create_workspace(workspace: WorkspaceCreate):
+def create_workspace(workspace: WorkspaceName):
     with database_connection( "No se ha podido crear el espacio") as connection:
         # Enviamos el nombre como parámetro para tratarlo como dato, no como SQL.
         # RETURNING recupera el registro creado sin hacer otra consulta.
@@ -77,4 +78,21 @@ def create_workspace(workspace: WorkspaceCreate):
         ).fetchone()
 
     # Salimos del contexto antes de responder para confirmar la creación.
+    return {"id": row[0], "name": row[1]}
+
+
+@app.patch("/workspaces/{workspace_id}")
+def rename_workspace(workspace_id: int, workspace: WorkspaceName):
+    with database_connection( "No se ha podido renombrar el espacio") as connection:
+        # Filtramos por id para cambiar solo el espacio solicitado. RETURNING
+        # permite detectar un id inexistente sin hacer una consulta previa.
+        row = connection.execute(
+            "UPDATE workspaces SET name = %s WHERE id = %s RETURNING id, name",
+            (workspace.name, workspace_id),
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException( status_code=404, detail="Espacio no encontrado")
+
+    # Respondemos cuando el contexto ya ha confirmado el cambio de nombre.
     return {"id": row[0], "name": row[1]}
