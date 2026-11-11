@@ -76,6 +76,8 @@ Con PostgreSQL arrancado, FastAPI puede comprobar la conexión ejecutando `SELEC
 
 La dirección de conexión se configura con `DATABASE_URL` y la contraseña se toma de `POSTGRES_PASSWORD`. Si ya tenías un `.env`, añade la línea `DATABASE_URL` de `.env.example` conservando tu contraseña.
 
+Los endpoints comparten la función `database_connection`, que lee la configuración y gestiona una conexión por operación. Al terminar, confirma los cambios si todo ha ido bien o los revierte si la operación falla, y cierra la conexión.
+
 Desde la raíz del repositorio, prepara el entorno de Python y arranca la API:
 
 ```bash
@@ -102,5 +104,27 @@ curl -i http://127.0.0.1:8000/workspaces
 ```
 
 `GET /workspaces` devuelve los campos `id` y `name`, ordenados por identificador. Si la tabla está vacía, devuelve `[]`. Si falta configuración o falla la consulta, responde con HTTP `503` y `{"detail":"No se han podido consultar los espacios"}`.
+
+### Crear un workspace
+
+Con la tabla preparada y la API en marcha, envía el nombre del nuevo espacio:
+
+```bash
+curl -i -X POST http://127.0.0.1:8000/workspaces \
+  -H 'Content-Type: application/json' \
+  --data '{"name":"Fotografía"}'
+```
+
+`POST /workspaces` guarda el espacio y responde con HTTP `201`, el identificador generado por PostgreSQL y el nombre guardado. Cada petición válida crea un registro nuevo.
+
+El nombre es obligatorio y debe ser texto. Se eliminan los espacios de los extremos antes de comprobar que tenga contenido. Si falta, está vacío o contiene solo espacios, la API responde con HTTP `422` sin crear el registro.
+
+El nombre se envía como parámetro de la consulta SQL para mantener los datos separados de la instrucción. Si falta configuración o falla la operación en PostgreSQL, la API devuelve HTTP `503` con `{"detail":"No se ha podido crear el espacio"}`.
+
+Para comprobar que se ha guardado, vuelve a consultar:
+
+```bash
+curl -i http://127.0.0.1:8000/workspaces
+```
 
 Para detener la API, pulsa `Ctrl+C`.
