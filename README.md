@@ -58,6 +58,18 @@ Los datos se guardan en el volumen `postgres_data` y se conservan al detener y v
 docker compose down
 ```
 
+## Preparar los workspaces
+
+Con PostgreSQL arrancado, aplica el archivo SQL desde la raíz del repositorio:
+
+```bash
+docker compose exec -T db psql -U workspace -d workspace -v ON_ERROR_STOP=1 < db/001_create_workspaces.sql
+```
+
+El archivo crea la tabla `workspaces`, con un identificador generado por PostgreSQL y un nombre, y carga Japan, Recetas y Personal Library. La creación y la carga se ejecutan en una sola transacción.
+
+Ejecuta este paso una sola vez por base de datos. Si la tabla ya existe, el comando falla antes de cargar los datos. Al reiniciar el contenedor, la tabla y los espacios se conservan en el volumen.
+
 ## Probar la API
 
 Con PostgreSQL arrancado, FastAPI puede comprobar la conexión ejecutando `SELECT 1`. Esta consulta verifica el acceso desde la API sin modificar datos.
@@ -81,4 +93,14 @@ curl -i http://127.0.0.1:8000/health/db
 
 Si puede consultar PostgreSQL, responde con HTTP `200` y `{"status":"ok"}`. Si falta configuración o la conexión falla, responde con HTTP `503` y `{"detail":"Base de datos no disponible"}`, sin mostrar credenciales ni detalles internos.
 
-`GET /health` comprueba que la API responde y funciona aunque PostgreSQL esté detenido. Puedes consultar también `GET /workspaces`, que por ahora devuelve la lista de ejemplo. Para detener la API, pulsa `Ctrl+C`.
+`GET /health` comprueba que la API responde y funciona aunque PostgreSQL esté detenido.
+
+Para consultar los espacios guardados en la tabla:
+
+```bash
+curl -i http://127.0.0.1:8000/workspaces
+```
+
+`GET /workspaces` devuelve los campos `id` y `name`, ordenados por identificador. Si la tabla está vacía, devuelve `[]`. Si falta configuración o falla la consulta, responde con HTTP `503` y `{"detail":"No se han podido consultar los espacios"}`.
+
+Para detener la API, pulsa `Ctrl+C`.
