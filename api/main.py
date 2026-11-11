@@ -33,8 +33,24 @@ def health_db():
 
 @app.get("/workspaces")
 def list_workspaces():
-    return [
-        {"id": 1, "name": "Japan"},
-        {"id": 2, "name": "Recetas"},
-        {"id": 3, "name": "Personal Library"},
-    ]
+    database_url = os.getenv("DATABASE_URL")
+    password     = os.getenv("POSTGRES_PASSWORD")
+
+    if not database_url or not password:
+        raise HTTPException(
+            status_code=503, detail="No se han podido consultar los espacios"
+        )
+
+    try:
+        with psycopg.connect(
+            database_url, password=password, connect_timeout=3
+        ) as connection:
+            rows = connection.execute(
+                "SELECT id, name FROM workspaces ORDER BY id"
+            ).fetchall()
+    except psycopg.Error:
+        raise HTTPException(
+            status_code=503, detail="No se han podido consultar los espacios"
+        ) from None
+
+    return [{"id": workspace_id, "name": name} for workspace_id, name in rows]
