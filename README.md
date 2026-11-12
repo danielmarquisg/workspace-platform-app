@@ -145,4 +145,26 @@ Si el identificador no existe, responde con HTTP `404` y `{"detail":"Espacio no 
 
 Vuelve a consultar `GET /workspaces` para comprobar el cambio. La operación conserva el identificador y la cantidad de espacios.
 
+### Eliminar un workspace
+
+Crea un espacio de prueba para comprobar el borrado:
+
+```bash
+curl -i -X POST http://127.0.0.1:8000/workspaces \
+  -H 'Content-Type: application/json' \
+  --data '{"name":"Prueba de borrado"}'
+```
+
+Usa el identificador que devuelve la creación. Sustituye el `5` de este ejemplo por ese identificador:
+
+```bash
+curl -i -X DELETE http://127.0.0.1:8000/workspaces/5
+```
+
+`DELETE /workspaces/{workspace_id}` elimina el registro de PostgreSQL y responde con HTTP `204`, sin cuerpo, después de confirmar la transacción. La consulta se filtra por id y utiliza un parámetro SQL.
+
+Vuelve a consultar `GET /workspaces` para comprobar que el espacio de prueba ya no aparece y que los demás se conservan. Si repites el borrado del mismo identificador, devuelve HTTP `404` con `{"detail":"Espacio no encontrado"}` porque el registro ya no existe.
+
+Un identificador que no se pueda interpretar como entero devuelve HTTP `422`. Si falta configuración o falla la operación en PostgreSQL, responde con HTTP `503` y `{"detail":"No se ha podido eliminar el espacio"}`.
+
 Para detener la API, pulsa `Ctrl+C`.

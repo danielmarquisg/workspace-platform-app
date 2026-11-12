@@ -1,6 +1,6 @@
 import os
 import psycopg
-from fastapi    import FastAPI, HTTPException
+from fastapi    import FastAPI, HTTPException, Response
 from pydantic   import BaseModel, ConfigDict, Field
 from contextlib import contextmanager
 
@@ -84,8 +84,8 @@ def create_workspace(workspace: WorkspaceName):
 @app.patch("/workspaces/{workspace_id}")
 def rename_workspace(workspace_id: int, workspace: WorkspaceName):
     with database_connection( "No se ha podido renombrar el espacio") as connection:
-        # Filtramos por id para cambiar solo el espacio solicitado. RETURNING
-        # permite detectar un id inexistente sin hacer una consulta previa.
+        # Filtramos por id para cambiar solo el espacio solicitado.
+        # RETURNING permite detectar un id inexistente sin hacer una consulta previa.
         row = connection.execute(
             "UPDATE workspaces SET name = %s WHERE id = %s RETURNING id, name",
             (workspace.name, workspace_id),
@@ -96,3 +96,20 @@ def rename_workspace(workspace_id: int, workspace: WorkspaceName):
 
     # Respondemos cuando el contexto ya ha confirmado el cambio de nombre.
     return {"id": row[0], "name": row[1]}
+
+
+@app.delete("/workspaces/{workspace_id}", status_code=204)
+def delete_workspace(workspace_id: int):
+    with database_connection( "No se ha podido eliminar el espacio") as connection:
+        # Filtramos por id para borrar un único espacio. 
+        # RETURNING permite detectar si existía sin hacer una consulta previa.
+        row = connection.execute(
+            "DELETE FROM workspaces WHERE id = %s RETURNING id",
+            (workspace_id,),
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException( status_code=404, detail="Espacio no encontrado")
+
+    # Respondemos sin contenido cuando el contexto ya ha confirmado el borrado.
+    return Response(status_code=204)
