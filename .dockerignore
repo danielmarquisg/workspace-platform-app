@@ -4,6 +4,7 @@
 !.dockerignore
 !index.html
 !styles.css
+!workspaces.js
 !japan/
 !japan/index.html
 !recetas/
