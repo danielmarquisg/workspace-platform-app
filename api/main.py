@@ -3,8 +3,17 @@ import psycopg
 from fastapi    import FastAPI, HTTPException, Response
 from pydantic   import BaseModel, ConfigDict, Field
 from contextlib import contextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# La web y la API usan puertos distintos en local. Permitimos que el navegador
+# lea los espacios desde los dos orígenes documentados para la portada.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:8080", "http://localhost:8080"],
+    allow_methods=["GET"],
+)
 
 
 class WorkspaceName(BaseModel):

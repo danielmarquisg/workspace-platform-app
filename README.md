@@ -2,21 +2,36 @@
 
 Aplicación web de Workspace Platform para organizar proyectos y recursos.
 
-La versión actual incluye una portada y los espacios de Japan, Recetas y Personal Library. Usa HTML, CSS y Nginx, sin dependencias de compilación.
+La portada consulta los espacios guardados en PostgreSQL a través de FastAPI. Usa HTML, CSS y JavaScript, sin dependencias de compilación, y conserva las páginas iniciales de Japan, Recetas y Personal Library.
 
 Se ha copiado desde [`web/` de gcp-infra-foundation](https://github.com/danielmarquisg/gcp-infra-foundation/tree/53184b83695399d9a6ed8157766eeb38fdb78ba2/web) para que la aplicación pueda evolucionar por separado de la infraestructura. Los archivos originales se conservan allí durante la transición.
 
 ## Probar en local
 
-Desde la raíz del repositorio:
+Arranca PostgreSQL y la API como se explica en «Base de datos local», «Preparar los workspaces» y «Probar la API». Docker Compose inicia la base de datos; Uvicorn inicia la API en el puerto `8000`.
+
+Con la API en marcha, abre otra terminal y sirve la web desde la raíz del repositorio:
 
 ```bash
 python3 -m http.server 8080 --bind 127.0.0.1
 ```
 
-Abre [la portada](http://localhost:8080/) y visita los tres espacios. Cada uno tiene un enlace para volver a la portada.
+Abre [la portada](http://127.0.0.1:8080/). Al cargar, `workspaces.js` consulta `GET /workspaces` y muestra las tarjetas con los nombres de PostgreSQL. La página distingue entre carga, lista vacía y error de conexión.
+
+Los ids `1`, `2` y `3` del SQL inicial conservan sus enlaces a Japan, Recetas y Personal Library. Los enlaces dependen del identificador, por lo que renombrar un espacio mantiene su página. Los demás espacios muestran «Contenido pendiente», sin enlace, hasta que tengan una página propia.
+
+La dirección `http://127.0.0.1:8000/workspaces` de `workspaces.js` corresponde a esta etapa de desarrollo local. La API permite la lectura desde `http://127.0.0.1:8080` y `http://localhost:8080` mediante CORS, porque el navegador considera distintos los orígenes con puertos diferentes. La conexión en un entorno remoto se preparará junto con el despliegue.
+
+Para comprobar el recorrido completo:
+
+1. Crea un espacio mediante `POST /workspaces`, como se muestra más abajo, y recarga la portada: debe aparecer una tarjeta con ese nombre.
+2. Renómbralo con `PATCH /workspaces/{workspace_id}` y recarga: debe aparecer el nuevo nombre.
+3. Elimínalo con `DELETE /workspaces/{workspace_id}` y recarga: debe desaparecer esa tarjeta.
+4. Mantén la web arrancada, detén Uvicorn con `Ctrl+C` y recarga: debe aparecer el mensaje de error. Vuelve a arrancar la API para continuar.
 
 ## Probar con Docker
+
+Mantén la API ejecutándose en el host, en el puerto `8000`. Este contenedor sirve los archivos de la web con Nginx.
 
 ```bash
 docker build --platform linux/amd64 -t workspace-platform-app:local .
@@ -27,7 +42,7 @@ Detén el servidor de Python antes de usar el mismo puerto con Docker. Comprueba
 
 Usa la barra final en las rutas de los espacios, o abre su `index.html`: con un puerto local como `8080`, la redirección actual de Nginx para las rutas sin barra apunta al puerto `80`. Los enlaces de la aplicación ya abren los archivos `index.html`.
 
-La imagen incorpora la web y fija la base de Nginx por digest para mantener una compilación reproducible. La construcción, las pruebas y la publicación en GHCR mediante GitHub Actions se añadirán en el siguiente paso.
+La imagen incorpora la web y fija la base de Nginx por digest para mantener una compilación reproducible. La construcción, las pruebas y la publicación en GHCR mediante GitHub Actions se añadirán en PR posteriores.
 
 ## Base de datos local
 

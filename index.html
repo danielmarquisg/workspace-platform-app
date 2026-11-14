@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Workspace Platform</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="workspaces.js" defer></script>
 </head>
 <body>
   <main>
@@ -16,7 +17,11 @@
     <section aria-labelledby="workspaces-title">
       <h2 id="workspaces-title">Mis workspaces</h2>
 
-      <div class="workspaces">
+      <p id="workspaces-status" role="status">Activa JavaScript para consultar tus espacios.</p>
+      <div class="workspaces" id="workspaces"></div>
+
+      <!-- Conservamos las páginas iniciales por id para que sus enlaces sigan funcionando al renombrarlas. -->
+      <template id="workspace-1">
         <a class="workspace-card" href="japan/index.html">
           <article>
             <h3>Japan</h3>
@@ -24,7 +29,9 @@
             <span>Ver workspace <span aria-hidden="true">→</span></span>
           </article>
         </a>
+      </template>
 
+      <template id="workspace-2">
         <a class="workspace-card" href="recetas/index.html">
           <article>
             <h3>Recetas</h3>
@@ -32,7 +39,9 @@
             <span>Ver workspace <span aria-hidden="true">→</span></span>
           </article>
         </a>
+      </template>
 
+      <template id="workspace-3">
         <a class="workspace-card" href="personal-library/index.html">
           <article>
             <h3>Personal Library</h3>
@@ -40,7 +49,16 @@
             <span>Ver workspace <span aria-hidden="true">→</span></span>
           </article>
         </a>
-      </div>
+      </template>
+
+      <template id="workspace-card">
+        <div class="workspace-card">
+          <article>
+            <h3></h3>
+            <p>Contenido pendiente.</p>
+          </article>
+        </div>
+      </template>
     </section>
   </main>
 </body>
