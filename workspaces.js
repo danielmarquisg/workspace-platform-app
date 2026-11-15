@@ -35,6 +35,7 @@ async function loadWorkspaces() {
 
       // Mostramos el nombre como texto para evitar que se interprete como HTML.
       card.querySelector("h3").textContent = workspace.name;
+      addRenameForm(card.querySelector("article"), workspace);
       workspaceList.append(card);
     }
 
@@ -49,6 +50,89 @@ async function loadWorkspaces() {
   workspaceButton.disabled = false;
 }
 
+function setSaving(saving) {
+  // Crear reconstruye el listado: evitamos que se solape con un renombrado pendiente.
+  workspaceName.disabled   = saving;
+  workspaceButton.disabled = saving;
+
+  for (const control of workspaceList.querySelectorAll("button, input")) {
+    control.disabled = saving;
+  }
+}
+
+function addRenameForm(card, workspace) {
+  const template = document.getElementById("workspace-actions");
+  const actions  = template.content.cloneNode(true);
+
+  const renameButton = actions.querySelector(".rename-button");
+  const renameForm   = actions.querySelector("form");
+  const renameName   = actions.querySelector("input");
+  const cancelButton = actions.querySelector(".cancel-button");
+  const message      = actions.querySelector('[role="status"]');
+
+  renameButton.addEventListener("click", function () {
+    renameName.value    = workspace.name;
+    message.textContent = "";
+    renameButton.hidden = true;
+    renameForm.hidden   = false;
+    renameName.focus();
+  });
+
+  cancelButton.addEventListener("click", function () {
+    renameForm.hidden   = true;
+    renameButton.hidden = false;
+    message.textContent = "";
+    renameButton.focus();
+  });
+
+  renameForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const name = renameName.value.trim();
+
+    if (name === "") {
+      message.textContent = "Escribe un nombre para el espacio.";
+      renameName.focus();
+      return;
+    }
+
+    setSaving(true);
+    message.textContent   = "Guardando nombre…";
+
+    try {
+      // El id identifica el espacio aunque su nombre haya cambiado.
+      const response = await fetch(workspacesUrl + "/" + workspace.id, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({name: name})
+      });
+
+      if (!response.ok) {
+        throw new Error("No se ha podido renombrar el espacio");
+      }
+
+      // Usamos el nombre confirmado por la API sin reconstruir las otras tarjetas.
+      const updatedWorkspace = await response.json();
+      workspace.name = updatedWorkspace.name;
+      card.querySelector("h3").textContent = workspace.name;
+      renameForm.hidden   = true;
+      renameButton.hidden = false;
+      message.textContent = "Espacio renombrado.";
+    } catch {
+      message.textContent = "No se ha podido renombrar el espacio. Conservamos el nombre para que puedas reintentarlo.";
+    }
+
+    setSaving(false);
+    if (renameForm.hidden) {
+      renameButton.focus();
+    } else {
+      renameName.focus();
+    }
+  });
+
+  // Los controles son hermanos del enlace para editar sin abrir la página del espacio.
+  card.append(actions);
+}
+
 async function createWorkspace(event) {
   // Enviamos el nombre con JavaScript sin que el formulario recargue la página.
   event.preventDefault();
@@ -60,8 +144,7 @@ async function createWorkspace(event) {
     return;
   }
 
-  workspaceName.disabled   = true;
-  workspaceButton.disabled = true;
+  setSaving(true);
 
   workspaceMessage.textContent = "Guardando espacio…";
 
@@ -84,8 +167,7 @@ async function createWorkspace(event) {
     workspaceMessage.textContent = "No se ha podido crear el espacio. Comprueba la conexión e inténtalo de nuevo.";
   }
 
-  workspaceName.disabled   = false;
-  workspaceButton.disabled = false;
+  setSaving(false);
   workspaceName.focus();
 }
 

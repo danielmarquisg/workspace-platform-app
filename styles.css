@@ -74,14 +74,19 @@ a {
   margin-bottom: 1rem;
 }
 
+.workspace-form[hidden] {
+  display: none;
+}
+
 .workspace-form label {
   display: grid;
   gap: 0.5rem;
   flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .workspace-form input,
-.workspace-form button {
+.workspace-button {
   padding: 0.75rem 1rem;
   font: inherit;
   color: var(--text);
@@ -90,18 +95,23 @@ a {
   border-radius: 0.5rem;
 }
 
-.workspace-form button {
+.workspace-form input {
+  width: 100%;
+  min-width: 0;
+}
+
+.workspace-button {
   cursor: pointer;
   font-weight: 650;
 }
 
-.workspace-form button:disabled {
+.workspace-button:disabled {
   cursor: wait;
   opacity: 0.6;
 }
 
 .workspace-form input:focus-visible,
-.workspace-form button:focus-visible {
+.workspace-button:focus-visible {
   outline: 3px solid #93c5fd;
   outline-offset: 0.25rem;
 }
@@ -117,7 +127,8 @@ a {
   gap: 1.25rem;
 }
 
-.workspace-card {
+.workspace-link {
+  display: block;
   text-decoration: none;
 }
 
@@ -147,15 +158,28 @@ a {
   font-weight: 650;
 }
 
-a.workspace-card:hover article {
+.workspace-card:hover article {
   border-color: #60a5fa;
   transform: translateY(-0.2rem);
 }
 
-.workspace-card:focus-visible {
+.workspace-link:focus-visible {
   outline: 3px solid #93c5fd;
   outline-offset: 0.25rem;
   border-radius:  0.75rem;
+}
+
+.workspace-actions {
+  margin-top: 1.5rem;
+}
+
+.workspace-actions .workspace-form {
+  gap: 0.75rem;
+  margin-bottom: 0;
+}
+
+.workspace-actions p:not(:empty) {
+  margin-top: 1rem;
 }
 
 .detail-header {

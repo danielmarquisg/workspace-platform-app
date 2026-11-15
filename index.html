@@ -22,7 +22,7 @@
           Nombre
           <input id="workspace-name" name="name" type="text" required autocomplete="off">
         </label>
-        <button id="workspace-button" type="submit" disabled>Crear espacio</button>
+        <button class="workspace-button" id="workspace-button" type="submit" disabled>Crear espacio</button>
       </form>
       <p id="workspace-message" role="status"></p>
 
@@ -31,33 +31,39 @@
 
       <!-- Conservamos las páginas iniciales por id para que sus enlaces sigan funcionando al renombrarlas. -->
       <template id="workspace-1">
-        <a class="workspace-card" href="japan/index.html">
+        <div class="workspace-card">
           <article>
-            <h3>Japan</h3>
-            <p>Itinerarios, fotografías y documentos del viaje.</p>
-            <span>Ver workspace <span aria-hidden="true">→</span></span>
+            <a class="workspace-link" href="japan/index.html">
+              <h3>Japan</h3>
+              <p>Itinerarios, fotografías y documentos del viaje.</p>
+              <span>Ver workspace <span aria-hidden="true">→</span></span>
+            </a>
           </article>
-        </a>
+        </div>
       </template>
 
       <template id="workspace-2">
-        <a class="workspace-card" href="recetas/index.html">
+        <div class="workspace-card">
           <article>
-            <h3>Recetas</h3>
-            <p>Platos favoritos e ideas para cocinar.</p>
-            <span>Ver workspace <span aria-hidden="true">→</span></span>
+            <a class="workspace-link" href="recetas/index.html">
+              <h3>Recetas</h3>
+              <p>Platos favoritos e ideas para cocinar.</p>
+              <span>Ver workspace <span aria-hidden="true">→</span></span>
+            </a>
           </article>
-        </a>
+        </div>
       </template>
 
       <template id="workspace-3">
-        <a class="workspace-card" href="personal-library/index.html">
+        <div class="workspace-card">
           <article>
-            <h3>Personal Library</h3>
-            <p>Libros y lecturas pendientes.</p>
-            <span>Ver workspace <span aria-hidden="true">→</span></span>
+            <a class="workspace-link" href="personal-library/index.html">
+              <h3>Personal Library</h3>
+              <p>Libros y lecturas pendientes.</p>
+              <span>Ver workspace <span aria-hidden="true">→</span></span>
+            </a>
           </article>
-        </a>
+        </div>
       </template>
 
       <template id="workspace-card">
@@ -66,6 +72,22 @@
             <h3></h3>
             <p>Contenido pendiente.</p>
           </article>
+        </div>
+      </template>
+
+      <!-- Una sola plantilla añade el mismo formulario de renombrado a cada tarjeta. -->
+      <template id="workspace-actions">
+        <div class="workspace-actions">
+          <button class="workspace-button rename-button" type="button">Renombrar</button>
+          <form class="workspace-form" hidden>
+            <label>
+              Nuevo nombre
+              <input name="name" type="text" required autocomplete="off">
+            </label>
+            <button class="workspace-button" type="submit">Guardar</button>
+            <button class="workspace-button cancel-button" type="button">Cancelar</button>
+          </form>
+          <p role="status"></p>
         </div>
       </template>
     </section>
