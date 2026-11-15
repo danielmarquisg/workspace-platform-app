@@ -17,6 +17,15 @@
     <section aria-labelledby="workspaces-title">
       <h2 id="workspaces-title">Mis workspaces</h2>
 
+      <form class="workspace-form" id="workspace-form">
+        <label for="workspace-name">
+          Nombre
+          <input id="workspace-name" name="name" type="text" required autocomplete="off">
+        </label>
+        <button id="workspace-button" type="submit" disabled>Crear espacio</button>
+      </form>
+      <p id="workspace-message" role="status"></p>
+
       <p id="workspaces-status" role="status">Activa JavaScript para consultar tus espacios.</p>
       <div class="workspaces" id="workspaces"></div>
 
