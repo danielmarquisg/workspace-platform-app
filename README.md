@@ -2,7 +2,7 @@
 
 Aplicación web de Workspace Platform para organizar proyectos y recursos.
 
-La portada permite consultar, crear y renombrar espacios guardados en PostgreSQL a través de FastAPI. Usa HTML, CSS y JavaScript, sin dependencias de compilación, y conserva las páginas iniciales de Japan, Recetas y Personal Library.
+La portada permite consultar, crear, renombrar y eliminar espacios guardados en PostgreSQL a través de FastAPI. Usa HTML, CSS y JavaScript, sin dependencias de compilación, y conserva las páginas iniciales de Japan, Recetas y Personal Library.
 
 Se ha copiado desde [`web/` de gcp-infra-foundation](https://github.com/danielmarquisg/gcp-infra-foundation/tree/53184b83695399d9a6ed8157766eeb38fdb78ba2/web) para que la aplicación pueda evolucionar por separado de la infraestructura. Los archivos originales se conservan allí durante la transición.
 
@@ -20,7 +20,7 @@ Abre [la portada](http://127.0.0.1:8080/). Al cargar, `workspaces.js` consulta `
 
 Los ids `1`, `2` y `3` del SQL inicial conservan sus enlaces a Japan, Recetas y Personal Library. Los enlaces dependen del identificador, por lo que renombrar un espacio mantiene su página. Los demás espacios muestran «Contenido pendiente», sin enlace, hasta que tengan una página propia.
 
-La dirección `http://127.0.0.1:8000/workspaces` de `workspaces.js` corresponde a esta etapa de desarrollo local. La API permite consultar, crear y renombrar espacios desde `http://127.0.0.1:8080` y `http://localhost:8080` mediante CORS, porque el navegador considera distintos los orígenes con puertos diferentes. La conexión en un entorno remoto se preparará junto con el despliegue.
+La dirección `http://127.0.0.1:8000/workspaces` de `workspaces.js` corresponde a esta etapa de desarrollo local. La API permite consultar, crear, renombrar y eliminar espacios desde `http://127.0.0.1:8080` y `http://localhost:8080` mediante CORS, porque el navegador considera distintos los orígenes con puertos diferentes. La conexión en un entorno remoto se preparará junto con el despliegue.
 
 Para comprobar el recorrido completo:
 
@@ -28,12 +28,15 @@ Para comprobar el recorrido completo:
 2. Recarga la portada para comprobar que el espacio sigue guardado.
 3. Pulsa «Renombrar» en su tarjeta: el campo debe mostrar el nombre guardado. Cambia el nombre y pulsa «Guardar»; debe actualizarse la tarjeta. Recarga para comprobar que se conserva.
 4. Abre de nuevo el formulario, cambia el nombre y pulsa «Cancelar»: la tarjeta debe conservar el nombre guardado.
-5. Elimínalo con `DELETE /workspaces/{workspace_id}` y recarga: debe desaparecer esa tarjeta.
-6. Mantén la web arrancada, detén Uvicorn con `Ctrl+C` e intenta crear un espacio: debe aparecer el error de creación y conservarse el nombre escrito. Vuelve a arrancar la API para reintentar. Comprueba también el renombrado: si falla, el formulario debe conservar lo escrito y permitir otro intento.
+5. Pulsa «Eliminar» y cancela la confirmación: la tarjeta debe seguir visible y el espacio debe conservarse al recargar.
+6. Vuelve a pulsar «Eliminar» y confirma el borrado: debe desaparecer la tarjeta y mostrarse «Espacio eliminado». Recarga para comprobar que no vuelve a aparecer.
+7. Mantén la web arrancada, detén Uvicorn con `Ctrl+C` e intenta crear un espacio: debe aparecer el error de creación y conservarse el nombre escrito. Vuelve a arrancar la API para reintentar. Comprueba también el renombrado con otro espacio de prueba: si falla, el formulario debe conservar lo escrito y permitir otro intento. Para probar el borrado, confirma la eliminación de ese espacio con la API detenida: la tarjeta debe mantenerse y mostrar un error; al recuperar la API, debe permitir reintentar.
 
 El formulario envía el nombre como JSON mediante `POST /workspaces`. Rechaza nombres vacíos o con solo espacios antes de enviarlos; la API mantiene su validación. Mientras se carga el listado o se guarda un espacio, el botón queda deshabilitado para evitar peticiones repetidas. Si la creación falla, el campo conserva el nombre para poder reintentar.
 
-Cada tarjeta permite editar su nombre con `PATCH /workspaces/{workspace_id}`. El formulario utiliza la misma validación de nombres que la creación y bloquea los controles de creación y renombrado mientras guarda para evitar que ambas operaciones se solapen. Al terminar, actualiza esa tarjeta con el nombre confirmado por la API, manteniendo su identificador y su enlace. Cancelar vuelve a la tarjeta sin enviar cambios; al abrir de nuevo el formulario se recupera el nombre guardado. Los controles están fuera del enlace para que editar no abra la página del espacio.
+Cada tarjeta permite editar su nombre con `PATCH /workspaces/{workspace_id}`. El formulario utiliza la misma validación de nombres que la creación y bloquea los controles mientras guarda para evitar que se solape con la creación o el borrado. Al terminar, actualiza esa tarjeta con el nombre confirmado por la API, manteniendo su identificador y su enlace. Cancelar vuelve a la tarjeta sin enviar cambios; al abrir de nuevo el formulario se recupera el nombre guardado. Los controles están fuera del enlace para que editar no abra la página del espacio.
+
+«Eliminar» abre una confirmación dentro de la página con el nombre guardado. «Cancelar» o la tecla `Esc` la cierran sin borrar. «Eliminar espacio» confirma la operación y envía `DELETE /workspaces/{workspace_id}`. El borrado elimina el registro de PostgreSQL y no se puede deshacer. La tarjeta se retira solo cuando la API responde con HTTP `204`; si falla, sigue visible y permite volver a intentarlo. Mientras se elimina, los controles quedan deshabilitados. Al borrar el último espacio, se muestra el aviso de lista vacía.
 
 ## Probar con Docker
 

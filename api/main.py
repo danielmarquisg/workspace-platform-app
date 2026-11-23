@@ -7,11 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Permitimos que la web local del puerto 8080 consulte, cree y renombre espacios en la API.
+# Permitimos que la web local del puerto 8080 gestione los espacios de la API.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:8080", "http://localhost:8080"],
-    allow_methods=["GET", "POST", "PATCH"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
 )
 
 

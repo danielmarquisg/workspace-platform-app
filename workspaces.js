@@ -35,7 +35,7 @@ async function loadWorkspaces() {
 
       // Mostramos el nombre como texto para evitar que se interprete como HTML.
       card.querySelector("h3").textContent = workspace.name;
-      addRenameForm(card.querySelector("article"), workspace);
+      addWorkspaceActions(card.querySelector("article"), workspace);
       workspaceList.append(card);
     }
 
@@ -51,7 +51,7 @@ async function loadWorkspaces() {
 }
 
 function setSaving(saving) {
-  // Crear reconstruye el listado: evitamos que se solape con un renombrado pendiente.
+  // Crear reconstruye el listado: evitamos que se solape con un renombrado o borrado pendiente.
   workspaceName.disabled   = saving;
   workspaceButton.disabled = saving;
 
@@ -60,15 +60,20 @@ function setSaving(saving) {
   }
 }
 
-function addRenameForm(card, workspace) {
+function addWorkspaceActions(card, workspace) {
   const template = document.getElementById("workspace-actions");
   const actions  = template.content.cloneNode(true);
 
   const renameButton = actions.querySelector(".rename-button");
+  const deleteButton = actions.querySelector(".delete-button");
   const renameForm   = actions.querySelector("form");
   const renameName   = actions.querySelector("input");
   const cancelButton = actions.querySelector(".cancel-button");
   const message      = actions.querySelector('[role="status"]');
+
+  const deleteDialog        = actions.querySelector("dialog");
+  const confirmDeleteButton = actions.querySelector(".confirm-delete-button");
+  const cancelDeleteButton  = actions.querySelector(".cancel-delete-button");
 
   renameButton.addEventListener("click", function () {
     renameName.value    = workspace.name;
@@ -126,6 +131,49 @@ function addRenameForm(card, workspace) {
       renameButton.focus();
     } else {
       renameName.focus();
+    }
+  });
+
+  deleteButton.addEventListener("click", function () {
+    // Mostramos el nombre guardado, que también se actualiza al renombrar la tarjeta.
+    deleteDialog.querySelector("p").textContent = "¿Eliminar el espacio «" + workspace.name + "»? Esta acción no se puede deshacer.";
+    deleteDialog.showModal();
+  });
+
+  cancelDeleteButton.addEventListener("click", function () {
+    deleteDialog.close();
+  });
+
+  confirmDeleteButton.addEventListener("click", async function () {
+    deleteDialog.close();
+    setSaving(true);
+    message.textContent = "Eliminando espacio…";
+
+    try {
+      const response = await fetch(workspacesUrl + "/" + workspace.id, {
+        method: "DELETE"
+      });
+
+      // El endpoint confirma el borrado con 204 y no devuelve JSON.
+      if (response.status !== 204) {
+        throw new Error("No se ha podido eliminar el espacio");
+      }
+
+      card.closest(".workspace-card").remove();
+      workspaceMessage.textContent = "Espacio eliminado.";
+      if (workspaceList.children.length === 0) {
+        workspaceStatus.textContent = "Todavía no tienes espacios.";
+      }
+    } catch {
+      message.textContent = "No se ha podido eliminar el espacio. Puedes volver a intentarlo.";
+    }
+
+    setSaving(false);
+    // Si la tarjeta desaparece, devolvemos el foco al formulario de creación.
+    if (card.isConnected) {
+      deleteButton.focus();
+    } else {
+      workspaceName.focus();
     }
   });
 

@@ -75,10 +75,13 @@
         </div>
       </template>
 
-      <!-- Una sola plantilla añade el mismo formulario de renombrado a cada tarjeta. -->
+      <!-- Una sola plantilla añade las mismas acciones a cada tarjeta. -->
       <template id="workspace-actions">
         <div class="workspace-actions">
-          <button class="workspace-button rename-button" type="button">Renombrar</button>
+          <div class="workspace-buttons">
+            <button class="workspace-button rename-button" type="button">Renombrar</button>
+            <button class="workspace-button delete-button" type="button">Eliminar</button>
+          </div>
           <form class="workspace-form" hidden>
             <label>
               Nuevo nombre
@@ -88,6 +91,13 @@
             <button class="workspace-button cancel-button" type="button">Cancelar</button>
           </form>
           <p role="status"></p>
+          <dialog class="workspace-delete-dialog" aria-label="Eliminar espacio">
+            <p></p>
+            <div class="workspace-buttons">
+              <button class="workspace-button delete-button confirm-delete-button" type="button">Eliminar espacio</button>
+              <button class="workspace-button cancel-delete-button" type="button" autofocus>Cancelar</button>
+            </div>
+          </dialog>
         </div>
       </template>
     </section>
