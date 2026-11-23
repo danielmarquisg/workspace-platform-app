@@ -173,6 +173,35 @@ a {
   margin-top: 1.5rem;
 }
 
+.workspace-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.delete-button {
+  color: #fca5a5;
+  border-color: #b45353;
+}
+
+.workspace-delete-dialog {
+  width: min(28rem, calc(100% - 2rem));
+  overflow-wrap: anywhere;
+  padding: 1.5rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.workspace-delete-dialog::backdrop {
+  background: rgb(0 0 0 / 0.65);
+}
+
+.workspace-delete-dialog .workspace-buttons {
+  margin-top: 1.5rem;
+}
+
 .workspace-actions .workspace-form {
   gap: 0.75rem;
   margin-bottom: 0;
