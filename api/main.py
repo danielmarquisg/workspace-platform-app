@@ -30,7 +30,6 @@ def database_connection(error_detail):
     Identifica la operación fallida sin exponer el error de PostgreSQL
     ni repetir su gestión en cada endpoint.
     """
-    # Uvicorn carga .env al arrancar; aquí leemos las variables del entorno.
     database_url = os.getenv("DATABASE_URL")
     password     = os.getenv("POSTGRES_PASSWORD")
 

@@ -8,7 +8,7 @@ Se ha copiado desde [`web/` de gcp-infra-foundation](https://github.com/danielma
 
 ## Probar en local
 
-Arranca PostgreSQL y la API como se explica en «Base de datos local», «Preparar los workspaces» y «Probar la API». Docker Compose inicia la base de datos; Uvicorn inicia la API en el puerto `8000`.
+Arranca PostgreSQL y la API con Docker Compose como se explica en «Arrancar la API y PostgreSQL». Si es la primera vez, aplica después el SQL de «Preparar los workspaces». La API queda disponible en el puerto `8000`.
 
 Con la API en marcha, abre otra terminal y sirve la web desde la raíz del repositorio:
 
@@ -30,7 +30,7 @@ Para comprobar el recorrido completo:
 4. Abre de nuevo el formulario, cambia el nombre y pulsa «Cancelar»: la tarjeta debe conservar el nombre guardado.
 5. Pulsa «Eliminar» y cancela la confirmación: la tarjeta debe seguir visible y el espacio debe conservarse al recargar.
 6. Vuelve a pulsar «Eliminar» y confirma el borrado: debe desaparecer la tarjeta y mostrarse «Espacio eliminado». Recarga para comprobar que no vuelve a aparecer.
-7. Mantén la web arrancada, detén Uvicorn con `Ctrl+C` e intenta crear un espacio: debe aparecer el error de creación y conservarse el nombre escrito. Vuelve a arrancar la API para reintentar. Comprueba también el renombrado con otro espacio de prueba: si falla, el formulario debe conservar lo escrito y permitir otro intento. Para probar el borrado, confirma la eliminación de ese espacio con la API detenida: la tarjeta debe mantenerse y mostrar un error; al recuperar la API, debe permitir reintentar.
+7. Mantén la web arrancada, detén la API con `docker compose stop api` e intenta crear un espacio: debe aparecer el error de creación y conservarse el nombre escrito. Vuelve a arrancarla con `docker compose start api` para reintentar. Comprueba también el renombrado con otro espacio de prueba: si falla, el formulario debe conservar lo escrito y permitir otro intento. Para probar el borrado, confirma la eliminación de ese espacio con la API detenida: la tarjeta debe mantenerse y mostrar un error; al recuperar la API, debe permitir reintentar.
 
 El formulario envía el nombre como JSON mediante `POST /workspaces`. Rechaza nombres vacíos o con solo espacios antes de enviarlos; la API mantiene su validación. Mientras se carga el listado o se guarda un espacio, el botón queda deshabilitado para evitar peticiones repetidas. Si la creación falla, el campo conserva el nombre para poder reintentar.
 
@@ -40,7 +40,7 @@ Cada tarjeta permite editar su nombre con `PATCH /workspaces/{workspace_id}`. El
 
 ## Probar con Docker
 
-Mantén la API ejecutándose en el host, en el puerto `8000`. Este contenedor sirve los archivos de la web con Nginx.
+Mantén la API arrancada con Compose, accesible en `127.0.0.1:8000`. El contenedor de este apartado sirve los archivos de la web con Nginx.
 
 ```bash
 docker build --platform linux/amd64 -t workspace-platform-app:local .
@@ -53,11 +53,11 @@ Usa la barra final en las rutas de los espacios, o abre su `index.html`: con un 
 
 La imagen incorpora la web y fija la base de Nginx por digest para mantener una compilación reproducible. La construcción, las pruebas y la publicación en GHCR mediante GitHub Actions se añadirán en PR posteriores.
 
-## Base de datos local
+## Arrancar la API y PostgreSQL
 
-Usamos PostgreSQL 16 con Docker Compose para preparar la persistencia de la aplicación.
+Docker Compose arranca FastAPI y PostgreSQL 16 en dos contenedores. `Dockerfile.api` construye la imagen de la API; el `Dockerfile` original sigue construyendo la web con Nginx.
 
-Desde la raíz del repositorio, crea la configuración local:
+Desde la raíz del repositorio, crea la configuración local si todavía no tienes un `.env`:
 
 ```bash
 cp .env.example .env
@@ -65,18 +65,25 @@ cp .env.example .env
 
 Edita `.env` y asigna una contraseña a `POSTGRES_PASSWORD`. Este archivo está excluido de Git para evitar publicar credenciales; `.env.example` sirve como plantilla y se guarda sin contraseña.
 
-Después, arranca la base de datos y comprueba que responde a una consulta:
+Si tienes Uvicorn ejecutándose en una terminal, detenlo con `Ctrl+C` para liberar el puerto `8000`. Después, construye la imagen y arranca ambos servicios:
 
 ```bash
-docker compose up -d --wait
+docker compose up -d --build --wait
+docker compose ps
 docker compose exec db psql -U workspace -d workspace -c "SELECT current_database();"
 ```
 
-La base de datos escucha en `127.0.0.1:5432`. La base y el usuario se llaman `workspace`; la contraseña se toma de `POSTGRES_PASSWORD` en `.env`. Esta configuración es solo para desarrollo local.
+Compose espera a que PostgreSQL esté preparado antes de iniciar la API. El health check de la API consulta `/health/db`, de modo que `--wait` termina cuando también funciona la conexión entre ambos. No necesita que la tabla `workspaces` exista todavía.
+
+Dentro de la red de Compose, la API conecta con `db:5432`. Compose define esa `DATABASE_URL` y pasa la contraseña de `.env` al arrancar. La dirección `127.0.0.1` de `.env.example` se conserva para ejecutar Uvicorn fuera de Docker.
+
+`Dockerfile.api.dockerignore` limita la construcción a `requirements.txt` y los archivos Python de `api/`; la contraseña y el entorno virtual no se incluyen en la imagen. La API se ejecuta con un usuario sin permisos de administrador. Si cambias su código o sus dependencias, repite `docker compose up -d --build --wait` para reconstruirla. Para consultar sus mensajes de arranque o errores, usa `docker compose logs api`.
+
+La API escucha en `127.0.0.1:8000` y la base de datos en `127.0.0.1:5432`. La base y el usuario se llaman `workspace`; la contraseña se toma de `POSTGRES_PASSWORD` en `.env`. Esta configuración es solo para desarrollo local.
 
 PostgreSQL establece la contraseña al inicializar un volumen vacío. Si la base de datos ya tiene datos, cambiar `.env` no cambia la contraseña del usuario existente.
 
-Los datos se guardan en el volumen `postgres_data` y se conservan al detener y volver a crear el contenedor. Para detenerlo:
+Los datos se guardan en el volumen `postgres_data` y se conservan al detener y volver a crear el contenedor. Para detener y retirar los contenedores conservando los datos:
 
 ```bash
 docker compose down
@@ -98,20 +105,11 @@ Ejecuta este paso una sola vez por base de datos. Si la tabla ya existe, el coma
 
 Con PostgreSQL arrancado, FastAPI puede comprobar la conexión ejecutando `SELECT 1`. Esta consulta verifica el acceso desde la API sin modificar datos.
 
-La dirección de conexión se configura con `DATABASE_URL` y la contraseña se toma de `POSTGRES_PASSWORD`. Si ya tenías un `.env`, añade la línea `DATABASE_URL` de `.env.example` conservando tu contraseña.
+La dirección de conexión se configura con `DATABASE_URL` y la contraseña se toma de `POSTGRES_PASSWORD`. Compose proporciona ambas variables al contenedor.
 
 Los endpoints comparten la función `database_connection`, que lee la configuración y gestiona una conexión por operación. Al terminar, confirma los cambios si todo ha ido bien o los revierte si la operación falla, y cierra la conexión.
 
-Desde la raíz del repositorio, prepara el entorno de Python y arranca la API:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python -m uvicorn api.main:app --env-file .env --host 127.0.0.1 --port 8000
-```
-
-`--env-file .env` carga las variables de configuración para la API. En otra terminal, comprueba la conexión:
+Con ambos servicios arrancados, comprueba la conexión:
 
 ```bash
 curl -i http://127.0.0.1:8000/health/db
@@ -191,4 +189,19 @@ Vuelve a consultar `GET /workspaces` para comprobar que el espacio de prueba ya 
 
 Un identificador que no se pueda interpretar como entero devuelve HTTP `422`. Si falta configuración o falla la operación en PostgreSQL, responde con HTTP `503` y `{"detail":"No se ha podido eliminar el espacio"}`.
 
-Para detener la API, pulsa `Ctrl+C`.
+Para detener solo la API, usa `docker compose stop api`; para volver a arrancarla, `docker compose start api`.
+
+### Ejecutar la API sin Docker
+
+Si prefieres trabajar con recarga automática mientras editas Python, puedes ejecutar Uvicorn en tu entorno virtual. Detén primero la API de Compose para liberar el puerto y mantén PostgreSQL arrancado:
+
+```bash
+docker compose stop api
+docker compose up -d --wait db
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m uvicorn api.main:app --env-file .env --host 127.0.0.1 --port 8000 --reload
+```
+
+En este caso, Uvicorn carga `.env`: `DATABASE_URL` debe apuntar a `postgresql://workspace@127.0.0.1:5432/workspace`, como en `.env.example`. Conserva la contraseña de tu base de datos. Para detener este proceso, pulsa `Ctrl+C`.
