@@ -8,13 +8,7 @@ Se ha copiado desde [`web/` de gcp-infra-foundation](https://github.com/danielma
 
 ## Probar en local
 
-Arranca PostgreSQL y la API con Docker Compose como se explica en «Arrancar la API y PostgreSQL». Si es la primera vez, aplica después el SQL de «Preparar los workspaces». La API queda disponible en el puerto `8000`.
-
-Con la API en marcha, abre otra terminal y sirve la web desde la raíz del repositorio:
-
-```bash
-python3 -m http.server 8080 --bind 127.0.0.1
-```
+Arranca la web, la API y PostgreSQL con Docker Compose como se explica en «Arrancar la aplicación». Si es la primera vez, aplica después el SQL de «Preparar los workspaces». La web queda disponible en el puerto `8080` y la API en el `8000`.
 
 Abre [la portada](http://127.0.0.1:8080/). Al cargar, `workspaces.js` consulta `GET /workspaces` y muestra las tarjetas con los nombres de PostgreSQL. La página distingue entre carga, lista vacía y error de conexión.
 
@@ -40,22 +34,27 @@ Cada tarjeta permite editar su nombre con `PATCH /workspaces/{workspace_id}`. El
 
 ## Probar con Docker
 
-Mantén la API arrancada con Compose, accesible en `127.0.0.1:8000`. El contenedor de este apartado sirve los archivos de la web con Nginx.
+Compose construye y arranca la web con Nginx. El navegador sigue consultando la API en `127.0.0.1:8000`; el servicio `web` sirve HTML, CSS y JavaScript en `127.0.0.1:8080`. Para consultar sus mensajes, usa `docker compose logs web`.
+
+Comprueba la portada, `/japan/`, `/recetas/` y `/personal-library/`, junto con sus enlaces y estilos. Si cambias los archivos de la web, repite `docker compose up -d --build --wait` para incorporarlos a la imagen.
+
+Si quieres probar la imagen web por separado, detén antes el servicio `web` para liberar el puerto `8080`:
 
 ```bash
+docker compose stop web
 docker build --platform linux/amd64 -t workspace-platform-app:local .
 docker run --rm --platform linux/amd64 -p 127.0.0.1:8080:80 workspace-platform-app:local
 ```
 
-Detén el servidor de Python antes de usar el mismo puerto con Docker. Comprueba la portada, `/japan/`, `/recetas/` y `/personal-library/`, junto con sus enlaces y estilos. Para detener cualquiera de los servidores, pulsa `Ctrl+C`.
+Para detener esta ejecución manual, pulsa `Ctrl+C`. Vuelve al arranque conjunto con `docker compose up -d --build --wait`.
 
 Usa la barra final en las rutas de los espacios, o abre su `index.html`: con un puerto local como `8080`, la redirección actual de Nginx para las rutas sin barra apunta al puerto `80`. Los enlaces de la aplicación ya abren los archivos `index.html`.
 
 La imagen incorpora la web y fija la base de Nginx por digest para mantener una compilación reproducible. La construcción, las pruebas y la publicación en GHCR mediante GitHub Actions se añadirán en PR posteriores.
 
-## Arrancar la API y PostgreSQL
+## Arrancar la aplicación
 
-Docker Compose arranca FastAPI y PostgreSQL 16 en dos contenedores. `Dockerfile.api` construye la imagen de la API; el `Dockerfile` original sigue construyendo la web con Nginx.
+Docker Compose arranca tres servicios: `web` con Nginx, `api` con FastAPI y `db` con PostgreSQL 16. El `Dockerfile` original construye la web y `Dockerfile.api` construye la API.
 
 Desde la raíz del repositorio, crea la configuración local si todavía no tienes un `.env`:
 
@@ -65,7 +64,7 @@ cp .env.example .env
 
 Edita `.env` y asigna una contraseña a `POSTGRES_PASSWORD`. Este archivo está excluido de Git para evitar publicar credenciales; `.env.example` sirve como plantilla y se guarda sin contraseña.
 
-Si tienes Uvicorn ejecutándose en una terminal, detenlo con `Ctrl+C` para liberar el puerto `8000`. Después, construye la imagen y arranca ambos servicios:
+Si tienes Uvicorn o el servidor web de Python ejecutándose en una terminal, detenlos con `Ctrl+C` para liberar los puertos `8000` y `8080`. Después, construye las imágenes y arranca los tres servicios:
 
 ```bash
 docker compose up -d --build --wait
@@ -73,13 +72,13 @@ docker compose ps
 docker compose exec db psql -U workspace -d workspace -c "SELECT current_database();"
 ```
 
-Compose espera a que PostgreSQL esté preparado antes de iniciar la API. El health check de la API consulta `/health/db`, de modo que `--wait` termina cuando también funciona la conexión entre ambos. No necesita que la tabla `workspaces` exista todavía.
+Compose espera a que PostgreSQL esté preparado antes de iniciar la API y a que la API esté preparada antes de iniciar la web. El health check de la API consulta `/health/db` y el de la web comprueba que Nginx sirve la portada. Así, `--wait` termina cuando los tres servicios están listos. No necesita que la tabla `workspaces` exista todavía.
 
 Dentro de la red de Compose, la API conecta con `db:5432`. Compose define esa `DATABASE_URL` y pasa la contraseña de `.env` al arrancar. La dirección `127.0.0.1` de `.env.example` se conserva para ejecutar Uvicorn fuera de Docker.
 
 `Dockerfile.api.dockerignore` limita la construcción a `requirements.txt` y los archivos Python de `api/`; la contraseña y el entorno virtual no se incluyen en la imagen. La API se ejecuta con un usuario sin permisos de administrador. Si cambias su código o sus dependencias, repite `docker compose up -d --build --wait` para reconstruirla. Para consultar sus mensajes de arranque o errores, usa `docker compose logs api`.
 
-La API escucha en `127.0.0.1:8000` y la base de datos en `127.0.0.1:5432`. La base y el usuario se llaman `workspace`; la contraseña se toma de `POSTGRES_PASSWORD` en `.env`. Esta configuración es solo para desarrollo local.
+La web escucha en `127.0.0.1:8080`, la API en `127.0.0.1:8000` y la base de datos en `127.0.0.1:5432`. La base y el usuario se llaman `workspace`; la contraseña se toma de `POSTGRES_PASSWORD` en `.env`. Esta configuración es solo para desarrollo local.
 
 PostgreSQL establece la contraseña al inicializar un volumen vacío. Si la base de datos ya tiene datos, cambiar `.env` no cambia la contraseña del usuario existente.
 
