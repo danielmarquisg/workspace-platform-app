@@ -1,0 +1,7 @@
+# Este Dockerfile solo necesita las dependencias y el código de la API.
+# .env, .venv y los archivos de la web quedan fuera de la construcción.
+**
+!requirements.txt
+!api/
+api/**
+!api/**/*.py

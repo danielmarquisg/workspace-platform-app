@@ -1,0 +1,16 @@
+# Fijamos la base por digest para conservar la misma versión de Python.
+FROM python:3.14-slim@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f
+
+WORKDIR /app
+
+# Instalamos primero las dependencias para reutilizar esta capa al cambiar el código.
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# La API no necesita permisos de administrador para atender peticiones.
+RUN useradd --create-home app
+COPY api/ ./api/
+USER app
+
+EXPOSE 8000
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
